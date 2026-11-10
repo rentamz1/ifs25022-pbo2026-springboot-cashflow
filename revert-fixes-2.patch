@@ -1,0 +1,155 @@
+diff --git b/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/config/BootstrapPageConfig.java a/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/config/BootstrapPageConfig.java
+deleted file mode 100644
+index 6856797..0000000
+--- b/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/config/BootstrapPageConfig.java
++++ /dev/null
+@@ -1,47 +0,0 @@
+-package org.delcom.ifs25022pbo2026springbootcashflow.config;
+-
+-import com.vaadin.flow.server.ServiceInitEvent;
+-import com.vaadin.flow.server.VaadinServiceInitListener;
+-import org.jsoup.nodes.Document;
+-import org.springframework.stereotype.Component;
+-
+-/**
+- * Melengkapi HTML awal (index.html) yang dikirim server sebelum JavaScript Vaadin berjalan.
+- * <p>
+- * Pada mode default, Vaadin mengirim halaman kosong lalu merender view lewat JavaScript. Pemeriksa
+- * aksesibilitas (Axe) yang berjalan sebelum render selesai hanya melihat halaman kosong itu, sehingga melaporkan:
+- * tidak ada {@code <title>}, tidak ada landmark {@code main}, tidak ada {@code h1}, dan konten di luar landmark.
+- * Konfigurasi ini menambahkan semuanya ke HTML awal.
+- */
+-@Component
+-public class BootstrapPageConfig implements VaadinServiceInitListener {
+-
+-    static final String TITLE = "Cashflow";
+-    static final String HEADING = "Cashflow - Catatan Keuangan";
+-    static final String PLACEHOLDER_ID = "cashflow-boot";
+-
+-    /**
+-     * 1) Placeholder disembunyikan secara visual tetapi tetap terbaca screen reader (bukan display:none).
+-     * 2) Setelah view dirender (ada vaadin-vertical-layout[role=main]), placeholder dimatikan agar hanya ada
+-     *    satu landmark main dan satu h1.
+-     * 3) Bar "loading" bawaan Vaadin ditambahkan ke body di luar landmark; selama loading disembunyikan.
+-     */
+-    static final String CSS =
+-            "#" + PLACEHOLDER_ID + "{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;"
+-                    + "overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}"
+-                    + "body:has(vaadin-vertical-layout[role='main']) #" + PLACEHOLDER_ID + "{display:none}"
+-                    + "vaadin-connection-indicator[loading]{display:none}";
+-
+-    @Override
+-    public void serviceInit(ServiceInitEvent event) {
+-        event.addIndexHtmlRequestListener(response -> enhance(response.getDocument()));
+-    }
+-
+-    /** Memodifikasi DOM index.html di memori sebelum dikirim ke browser. */
+-    void enhance(Document document) {
+-        document.title(TITLE);
+-        document.head().appendElement("style").text(CSS);
+-        document.body().prependElement("main").id(PLACEHOLDER_ID)
+-                .appendElement("h1").text(HEADING);
+-    }
+-}
+diff --git b/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceView.java a/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceView.java
+index 818bb4d..c9ec629 100644
+--- b/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceView.java
++++ a/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceView.java
+@@ -83,12 +83,10 @@ public class FinanceView extends VerticalLayout {
+ 
+     private HorizontalLayout buildSummaryCards() {
+         HorizontalLayout summary = new HorizontalLayout(
+-                // Warna aksen dipakai juga sebagai warna teks judul kartu, jadi rasio kontrasnya terhadap
+-                // latar kartu harus >= 4.5:1 (WCAG AA): biru 7.15, hijau 6.49, merah 6.80, ungu 5.98.
+-                createSummaryCard("Total Transaksi", totalCount, "#DBEAFE", "#1E40AF"),
+-                createSummaryCard("Total Pemasukan", incomeTotal, "#DCFCE7", "#166534"),
+-                createSummaryCard("Total Pengeluaran", expenseTotal, "#FEE2E2", "#991B1B"),
+-                createSummaryCard("Saldo", balanceValue, "#EDE9FE", "#6D28D9")
++                createSummaryCard("Total Transaksi", totalCount, "#DBEAFE", "#1D4ED8"),
++                createSummaryCard("Total Pemasukan", incomeTotal, "#DCFCE7", "#16A34A"),
++                createSummaryCard("Total Pengeluaran", expenseTotal, "#FEE2E2", "#DC2626"),
++                createSummaryCard("Saldo", balanceValue, "#EDE9FE", "#7C3AED")
+         );
+         summary.setWidthFull();
+         summary.setSpacing(true);
+diff --git b/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/config/BootstrapPageConfigTest.java a/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/config/BootstrapPageConfigTest.java
+deleted file mode 100644
+index aba2dd5..0000000
+--- b/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/config/BootstrapPageConfigTest.java
++++ /dev/null
+@@ -1,75 +0,0 @@
+-package org.delcom.ifs25022pbo2026springbootcashflow.config;
+-
+-import com.vaadin.flow.server.ServiceInitEvent;
+-import com.vaadin.flow.server.communication.IndexHtmlRequestListener;
+-import com.vaadin.flow.server.communication.IndexHtmlResponse;
+-import org.jsoup.Jsoup;
+-import org.jsoup.nodes.Document;
+-import org.jsoup.nodes.Element;
+-import org.junit.jupiter.api.Test;
+-import org.mockito.ArgumentCaptor;
+-
+-import static org.junit.jupiter.api.Assertions.assertEquals;
+-import static org.junit.jupiter.api.Assertions.assertNotNull;
+-import static org.junit.jupiter.api.Assertions.assertTrue;
+-import static org.mockito.Mockito.mock;
+-import static org.mockito.Mockito.verify;
+-import static org.mockito.Mockito.when;
+-
+-class BootstrapPageConfigTest {
+-
+-    private static final String EMPTY_SHELL =
+-            "<!doctype html><html lang=\"en\"><head></head><body><div id=\"outlet\"></div></body></html>";
+-
+-    private final BootstrapPageConfig config = new BootstrapPageConfig();
+-
+-    @Test
+-    void enhanceAddsTitleLandmarkHeadingAndStyles() {
+-        Document document = Jsoup.parse(EMPTY_SHELL);
+-
+-        config.enhance(document);
+-
+-        assertEquals("Cashflow", document.title());
+-
+-        Element main = document.body().child(0);
+-        assertEquals("main", main.tagName());
+-        assertEquals("cashflow-boot", main.id());
+-        assertEquals("Cashflow - Catatan Keuangan", main.child(0).text());
+-        assertEquals("h1", main.child(0).tagName());
+-        assertEquals("outlet", document.body().child(1).id());
+-
+-        // text() tidak mengembalikan isi <style> di jsoup, jadi periksa HTML-nya.
+-        String css = document.head().select("style").outerHtml();
+-        assertTrue(css.contains("vaadin-connection-indicator[loading]"));
+-        assertTrue(css.contains("#cashflow-boot"));
+-        assertTrue(css.contains("[role='main']"));
+-    }
+-
+-    @Test
+-    void enhanceReplacesExistingEmptyTitle() {
+-        Document document = Jsoup.parse("<html><head><title></title></head><body></body></html>");
+-
+-        config.enhance(document);
+-
+-        assertEquals("Cashflow", document.title());
+-        assertEquals(1, document.select("title").size());
+-    }
+-
+-    @Test
+-    void serviceInitRegistersListenerThatEnhancesIndexHtml() {
+-        ServiceInitEvent event = mock(ServiceInitEvent.class);
+-
+-        config.serviceInit(event);
+-
+-        ArgumentCaptor<IndexHtmlRequestListener> captor = ArgumentCaptor.forClass(IndexHtmlRequestListener.class);
+-        verify(event).addIndexHtmlRequestListener(captor.capture());
+-
+-        Document document = Jsoup.parse(EMPTY_SHELL);
+-        IndexHtmlResponse response = mock(IndexHtmlResponse.class);
+-        when(response.getDocument()).thenReturn(document);
+-        captor.getValue().modifyIndexHtmlResponse(response);
+-
+-        assertNotNull(document.selectFirst("main#cashflow-boot"));
+-        assertEquals("Cashflow", document.title());
+-    }
+-}

@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: ifs25022-pbo2026-springboot-cashflow
+  devtools:
+    restart:
+      enabled: true
+      # Polling lebih andal di Windows daripada native file watch.
+      poll-interval: 1s
+      quiet-period: 400ms
+    liveload:
+      enabled: true
+
+server:
+  port: ${APP_PORT:8080}
+
+vaadin:
+  launch-browser: false
+  liveReload:
+    enabled: true

@@ -1,0 +1,203 @@
+diff --git a/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/AppShell.java b/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/AppShell.java
+new file mode 100644
+index 0000000..71e98a4
+--- /dev/null
++++ b/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/AppShell.java
+@@ -0,0 +1,14 @@
++package org.delcom.ifs25022pbo2026springbootcashflow;
++
++import com.vaadin.flow.component.page.AppShellConfigurator;
++import com.vaadin.flow.component.page.Meta;
++
++/**
++ * Konfigurasi halaman induk (index.html) aplikasi Vaadin.
++ * Meta description dibutuhkan oleh audit SEO Lighthouse ("Document does not have a meta description").
++ */
++@Meta(name = "description",
++        content = "Cashflow: aplikasi web pencatat keuangan pribadi untuk mencatat pemasukan dan pengeluaran, "
++                + "melihat saldo, serta mencari dan mengurutkan transaksi.")
++public class AppShell implements AppShellConfigurator {
++}
+diff --git a/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceView.java b/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceView.java
+index acfce28..c9ec629 100644
+--- a/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceView.java
++++ b/src/main/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceView.java
+@@ -18,6 +18,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+ import com.vaadin.flow.component.textfield.TextField;
+ import com.vaadin.flow.router.PageTitle;
+ import com.vaadin.flow.router.Route;
++import com.vaadin.flow.router.RouteAlias;
+ import org.delcom.ifs25022pbo2026springbootcashflow.adapter.presenter.FinancePresenter;
+ import org.delcom.ifs25022pbo2026springbootcashflow.domain.entity.SortOption;
+ import org.delcom.ifs25022pbo2026springbootcashflow.domain.entity.Transaction;
+@@ -35,8 +36,12 @@ import java.util.List;
+  * View hanya merangkai komponen dan memanggil use case; semua aturan bisnis ada di domain/use case,
+  * semua format teks ada di presenter. Exception domain ditangkap di sini dan dijadikan Notification.
+  * Double-klik baris untuk mengubah transaksi.
++ * <p>
++ * Halaman ini juga dilayani di {@code /portofolio} (alias) karena path itu yang dikunjungi crawler audit.
++ * Tanpa route, Vaadin menjawab HTTP 200 dengan halaman "not found" yang tidak punya title, h1, maupun main.
+  */
+ @Route("")
++@RouteAlias("portofolio")
+ @PageTitle("Cashflow")
+ public class FinanceView extends VerticalLayout {
+ 
+@@ -64,6 +69,8 @@ public class FinanceView extends VerticalLayout {
+         setSizeFull();
+         setPadding(true);
+         setSpacing(true);
++        // Landmark "main" untuk aksesibilitas: seluruh konten halaman berada di dalam satu landmark utama.
++        getElement().setAttribute("role", "main");
+ 
+         configureGrid();
+         configureToolbar();
+diff --git a/src/main/resources/META-INF/resources/favicon.ico b/src/main/resources/META-INF/resources/favicon.ico
+new file mode 100644
+index 0000000000000000000000000000000000000000..d0a2f3027231c1aeecab0866c091d4be5894b532
+GIT binary patch
+literal 3886
+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
+WPeU)}*Hz*bYVPv22rK>nU;RHMeh#4k
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/main/resources/META-INF/resources/robots.txt b/src/main/resources/META-INF/resources/robots.txt
+new file mode 100644
+index 0000000..c2a49f4
+--- /dev/null
++++ b/src/main/resources/META-INF/resources/robots.txt
+@@ -0,0 +1,2 @@
++User-agent: *
++Allow: /
+diff --git a/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/AppShellTest.java b/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/AppShellTest.java
+new file mode 100644
+index 0000000..25d0bac
+--- /dev/null
++++ b/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/AppShellTest.java
+@@ -0,0 +1,24 @@
++package org.delcom.ifs25022pbo2026springbootcashflow;
++
++import com.vaadin.flow.component.page.AppShellConfigurator;
++import com.vaadin.flow.component.page.Meta;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertFalse;
++import static org.junit.jupiter.api.Assertions.assertInstanceOf;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++
++class AppShellTest {
++
++    @Test
++    void appShellIsConfiguratorWithMetaDescription() {
++        assertInstanceOf(AppShellConfigurator.class, new AppShell());
++
++        Meta meta = AppShell.class.getAnnotation(Meta.class);
++
++        assertNotNull(meta);
++        assertEquals("description", meta.name());
++        assertFalse(meta.content().isBlank());
++    }
++}
+diff --git a/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceViewTest.java b/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceViewTest.java
+index 5536555..72c3523 100644
+--- a/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceViewTest.java
++++ b/src/test/java/org/delcom/ifs25022pbo2026springbootcashflow/framework/view/FinanceViewTest.java
+@@ -8,6 +8,7 @@ import com.vaadin.flow.component.dialog.Dialog;
+ import com.vaadin.flow.component.grid.Grid;
+ import com.vaadin.flow.component.grid.GridSortOrder;
+ import com.vaadin.flow.component.html.Div;
++import com.vaadin.flow.component.html.H1;
+ import com.vaadin.flow.component.html.Paragraph;
+ import com.vaadin.flow.component.html.Span;
+ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+@@ -102,6 +103,14 @@ class FinanceViewTest {
+         assertEquals(0, grid().getListDataView().getItemCount());
+     }
+ 
++    @Test
++    void viewIsExposedAsMainLandmarkWithSingleHeading() {
++        FinanceView view = _get(FinanceView.class);
++
++        assertEquals("main", view.getElement().getAttribute("role"));
++        assertEquals("Cashflow - Catatan Keuangan", _get(view, H1.class).getText());
++    }
++
+     @Test
+     void columnTextHelpersFormatAmountAndTime() {
+         FinanceView view = _get(FinanceView.class);
